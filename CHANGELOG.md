@@ -7,6 +7,10 @@
 * **deps:** update Marp CLI support to 4.5.1 and refresh development dependencies
 * **tooling:** require Node.js 22.20 for development and verify Node.js 22.20 and 24 in CI
 
+### Bug Fixes
+
+* **export:** remove preview-generated temporary HTML and provide a settings action to clean historical temporary files ([#29](https://github.com/shuuul/obsidian-marp-extended/issues/29))
+
 ## [0.12.0](https://github.com/shuuul/obsidian-marp-extended/compare/0.11.1...0.12.0) (2026-09-06)
 
 

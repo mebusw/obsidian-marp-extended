@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { App, Notice, TFile } from 'obsidian';
 import { expect, jest, test, beforeEach, afterEach } from '@jest/globals';
 import { EventEmitter } from 'node:events';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename as pathBasename, dirname, join } from 'node:path';
 
@@ -448,6 +448,127 @@ test('HTML export uses Bespoke template and selected output file', async () => {
 		'-o',
 		'/tmp/export/custom.html',
 	]));
+});
+
+test('preview uses a managed temporary source and removes the generated HTML when Marp CLI exits', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'marp-preview-temp-source-'));
+	tempDirectories.push(root);
+	const file = createDiskBackedFile(root, 'slides/deck.md', '# Deck\n');
+	let temporarySourcePath = '';
+	let temporaryHtmlPath = '';
+
+	spawnMock.mockImplementation((_executable, args) => {
+		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.1\n' });
+		temporarySourcePath = args[0];
+		temporaryHtmlPath = temporarySourcePath.replace(/\.md$/i, '.html');
+		writeFileSync(temporaryHtmlPath, '<html></html>', 'utf-8');
+		return createMockChildProcess();
+	});
+
+	const app = {
+		vault: file.vault,
+		metadataCache: {
+			getFileCache: jest.fn(() => ({ frontmatter: {} })),
+			getFirstLinkpathDest: jest.fn(() => null),
+		},
+	} as unknown as App;
+	const exporter = new MarpExport(DEFAULT_SETTINGS, app, '.obsidian/plugins/marp-extended');
+
+	await exporter.export(file, 'preview');
+
+	expect(temporarySourcePath).toMatch(/[/\\]\.deck\.marp-export-\d+-[0-9a-z]+-[0-9a-z]+\.md$/i);
+	expect(getLastCliArgs()).toContain('--preview');
+	expect(existsSync(temporarySourcePath)).toBe(false);
+	expect(existsSync(temporaryHtmlPath)).toBe(false);
+	expect(existsSync(join(root, 'slides/deck.html'))).toBe(false);
+});
+
+test('preview removes its temporary Markdown and HTML when Marp CLI fails', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'marp-preview-failure-'));
+	tempDirectories.push(root);
+	const file = createDiskBackedFile(root, 'slides/deck.md', '# Deck\n');
+	let temporarySourcePath = '';
+	let temporaryHtmlPath = '';
+
+	spawnMock
+		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.1\n' }))
+		.mockImplementationOnce((_executable, args) => {
+			temporarySourcePath = args[0];
+			temporaryHtmlPath = temporarySourcePath.replace(/\.md$/i, '.html');
+			writeFileSync(temporaryHtmlPath, '<html></html>', 'utf-8');
+			return createMockChildProcess({ exitCode: 1, stderr: 'preview failed' });
+		});
+
+	const app = {
+		vault: file.vault,
+		metadataCache: {
+			getFileCache: jest.fn(() => ({ frontmatter: {} })),
+			getFirstLinkpathDest: jest.fn(() => null),
+		},
+	} as unknown as App;
+	const exporter = new MarpExport(DEFAULT_SETTINGS, app, '.obsidian/plugins/marp-extended');
+
+	await expect(exporter.export(file, 'preview')).rejects.toThrow('preview failed');
+	expect(existsSync(temporarySourcePath)).toBe(false);
+	expect(existsSync(temporaryHtmlPath)).toBe(false);
+});
+
+test('historical cleanup recursively removes only managed temporary files older than 24 hours', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'marp-historical-cleanup-'));
+	tempDirectories.push(root);
+	const nested = join(root, 'slides', 'nested');
+	const oldMarkdown = join(nested, '.deck.marp-export-123-labcde-random.md');
+	const oldHtml = join(root, '.root-deck.marp-export-456-lfghij-other.html');
+	const freshHtml = join(nested, '.fresh.marp-export-789-lklmno-recent.html');
+	const similarUserFile = join(nested, '.deck.marp-export-not-managed.html');
+	const oldDate = new Date(Date.now() - (25 * 60 * 60 * 1000));
+
+	mkdirSync(nested, { recursive: true });
+	for (const path of [oldMarkdown, oldHtml, freshHtml, similarUserFile]) {
+		writeFileSync(path, 'temporary', 'utf-8');
+	}
+	utimesSync(oldMarkdown, oldDate, oldDate);
+	utimesSync(oldHtml, oldDate, oldDate);
+	utimesSync(similarUserFile, oldDate, oldDate);
+
+	const file = createDiskBackedFile(root, 'deck.md', '# Deck\n');
+	const app = { vault: file.vault } as unknown as App;
+
+	const result = await MarpExport.removeHistoricalTemporaryFiles(app);
+
+	expect(result).toEqual({ removed: 2, failed: 0 });
+	expect(existsSync(oldMarkdown)).toBe(false);
+	expect(existsSync(oldHtml)).toBe(false);
+	expect(existsSync(freshHtml)).toBe(true);
+	expect(existsSync(similarUserFile)).toBe(true);
+});
+
+test('export removes stale managed files from the source directory but keeps recent files', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'marp-local-cleanup-'));
+	tempDirectories.push(root);
+	const file = createDiskBackedFile(root, 'slides/deck.md', '# Deck\n');
+	const oldHtml = join(root, 'slides/.old.marp-export-123-labcde-random.html');
+	const freshMarkdown = join(root, 'slides/.fresh.marp-export-456-lfghij-recent.md');
+	const oldDate = new Date(Date.now() - (25 * 60 * 60 * 1000));
+
+	writeFileSync(oldHtml, '<html></html>', 'utf-8');
+	writeFileSync(freshMarkdown, '# Temporary', 'utf-8');
+	utimesSync(oldHtml, oldDate, oldDate);
+	mockSaveDialog({ canceled: false, filePath: join(root, 'deck.html') });
+
+	const app = {
+		vault: file.vault,
+		metadataCache: {
+			getFileCache: jest.fn(() => ({ frontmatter: {} })),
+			getFirstLinkpathDest: jest.fn(() => null),
+		},
+	} as unknown as App;
+	const exporter = new MarpExport(DEFAULT_SETTINGS, app, '.obsidian/plugins/marp-extended');
+
+	await exporter.export(file, 'html');
+
+	expect(existsSync(oldHtml)).toBe(false);
+	expect(existsSync(freshMarkdown)).toBe(true);
 });
 
 test('export converts wiki-links through a temporary markdown file without changing the source file', async () => {

@@ -40,6 +40,7 @@ describe('Marp Extended setting definitions', () => {
 			'Use npx fallback',
 			'Chrome path',
 			'Auto-fit wide Mermaid flowcharts',
+			'Historical temporary files',
 			'Modify editor tab Mermaid rendering',
 			'Editor Mermaid theme',
 			'Installed themes',
@@ -58,7 +59,7 @@ describe('Marp Extended setting definitions', () => {
 			.filter(isSettingGroup)
 			.flatMap(group => group.items ?? []);
 
-		expect(items).toHaveLength(8);
+		expect(items).toHaveLength(9);
 		expect(items.every(item => 'render' in item && typeof item.render === 'function')).toBe(true);
 	});
 });

@@ -51,13 +51,21 @@ type ElectronRequire = (moduleName: string) => ElectronModule;
 
 interface ExportSource {
 	path: string;
-	temporaryPath: string | null;
+	temporaryPaths: string[];
+}
+
+export interface TemporaryExportCleanupResult {
+	removed: number;
+	failed: number;
 }
 
 type NodeFsModule = typeof NodeFs;
 type NodePathModule = typeof NodePath;
 
 const HTML_EXPORT_TEMPLATE = 'bespoke';
+const STALE_TEMPORARY_EXPORT_AGE_MS = 24 * 60 * 60 * 1000;
+const TEMPORARY_EXPORT_FILE_PATTERN = /^\..+\.marp-export-\d+-[0-9a-z]+-[0-9a-z]+\.(?:md|html)$/i;
+const activeTemporaryExportPaths = new Set<string>();
 
 function assertDesktopExport(): void {
 	if (!Platform.isDesktop) {
@@ -106,6 +114,12 @@ export class MarpExport {
 		return getMarpCliVersion(settings);
 	}
 
+	static removeHistoricalTemporaryFiles(app: App): Promise<TemporaryExportCleanupResult> {
+		const fs = getNodeFs();
+		const vaultRoot = FilePath.resolveVaultFileSystemPath(app.vault, '');
+		return this.removeTemporaryFiles(vaultRoot, true, fs);
+	}
+
 	constructor(settings: MarpExtendedSettings, app: App | null = null, pluginDir?: string) {
 		this.settings = settings;
 		this.app = app;
@@ -127,7 +141,16 @@ export class MarpExport {
 		const sourceFilePath = filesTool.getExportFileSystemPath(file);
 		const themePaths = filesTool.getThemePaths(file).filter((themePath) => fs.existsSync(themePath));
 		if (sourceFilePath !== '') {
-			const exportSource = await this.prepareExportSource(file, filesTool, sourceFilePath, fs, path, markdownOverride);
+			await MarpExport.removeTemporaryFiles(path.dirname(sourceFilePath), false, fs);
+			const exportSource = await this.prepareExportSource(
+				file,
+				filesTool,
+				sourceFilePath,
+				fs,
+				path,
+				markdownOverride,
+				type === 'preview',
+			);
 			const argv: string[] = [exportSource.path, '--allow-local-files', '--engine', enginePath, '--html'];
 
 			if (themePaths.length > 0) {
@@ -164,7 +187,7 @@ export class MarpExport {
 				await runMarpCli(this.settings, argv);
 				return outputPath;
 			} finally {
-				this.removeTemporaryExportSource(exportSource.temporaryPath, fs);
+				this.removeTemporaryExportSources(exportSource.temporaryPaths, fs);
 			}
 		}
 
@@ -178,11 +201,12 @@ export class MarpExport {
 		fs: NodeFsModule,
 		path: NodePathModule,
 		markdownOverride?: string,
+		forceTemporarySource = false,
 	): Promise<ExportSource> {
 		if (!this.app) {
 			await filesTool.removeFileFromRoot(file);
 			await filesTool.copyFileToRoot(file);
-			return { path: sourceFilePath, temporaryPath: null };
+			return { path: sourceFilePath, temporaryPaths: [] };
 		}
 
 		const sourceContent = markdownOverride ?? await this.app.vault.cachedRead(file);
@@ -195,15 +219,25 @@ export class MarpExport {
 			preparedDeck.markdown,
 			serializeMarpDeckStyles(preparedDeck.styles, 'export'),
 		);
-		const needsTemporarySource = processedContent !== sourceContent || filesTool.shouldUseRootExportSource(file);
+		const needsTemporarySource = forceTemporarySource
+			|| processedContent !== sourceContent
+			|| filesTool.shouldUseRootExportSource(file);
 
 		if (!needsTemporarySource) {
-			return { path: sourceFilePath, temporaryPath: null };
+			return { path: sourceFilePath, temporaryPaths: [] };
 		}
 
 		const temporaryPath = this.getTemporaryExportSourcePath(sourceFilePath, file.basename, path);
 		fs.writeFileSync(temporaryPath, processedContent, { encoding: 'utf-8', flag: 'wx' });
-		return { path: temporaryPath, temporaryPath };
+		const temporaryPaths = [temporaryPath];
+		if (forceTemporarySource) {
+			const parsedTemporaryPath = path.parse(temporaryPath);
+			temporaryPaths.push(path.join(parsedTemporaryPath.dir, `${parsedTemporaryPath.name}.html`));
+		}
+		for (const path of temporaryPaths) {
+			activeTemporaryExportPaths.add(path);
+		}
+		return { path: temporaryPath, temporaryPaths };
 	}
 
 	private getTemporaryExportSourcePath(sourceFilePath: string, basename: string, path: NodePathModule): string {
@@ -211,11 +245,76 @@ export class MarpExport {
 		return path.join(path.dirname(sourceFilePath), `.${basename}.marp-export-${suffix}.md`);
 	}
 
-	private removeTemporaryExportSource(temporaryPath: string | null, fs: NodeFsModule): void {
-		if (!temporaryPath || !fs.existsSync(temporaryPath)) {
-			return;
+	private removeTemporaryExportSources(temporaryPaths: string[], fs: NodeFsModule): void {
+		let failed = 0;
+		for (const temporaryPath of temporaryPaths) {
+			try {
+				if (fs.existsSync(temporaryPath)) {
+					fs.unlinkSync(temporaryPath);
+				}
+			} catch (error) {
+				failed += 1;
+				console.warn(`Marp Extended: could not remove temporary export file ${temporaryPath}`, error);
+			} finally {
+				activeTemporaryExportPaths.delete(temporaryPath);
+			}
 		}
-		fs.unlinkSync(temporaryPath);
+		if (failed > 0) {
+			new Notice(`Marp Extended could not remove ${failed} temporary export file${failed === 1 ? '' : 's'}.`, 8000);
+		}
+	}
+
+	private static async removeTemporaryFiles(
+		directory: string,
+		recursive: boolean,
+		fs: NodeFsModule,
+	): Promise<TemporaryExportCleanupResult> {
+		const result: TemporaryExportCleanupResult = { removed: 0, failed: 0 };
+		const cutoff = Date.now() - STALE_TEMPORARY_EXPORT_AGE_MS;
+		const pendingDirectories = [directory];
+		const path = getNodePath();
+
+		while (pendingDirectories.length > 0) {
+			const currentDirectory = pendingDirectories.pop();
+			if (!currentDirectory) {
+				continue;
+			}
+
+			let entries: NodeFs.Dirent[];
+			try {
+				entries = await fs.promises.readdir(currentDirectory, { withFileTypes: true });
+			} catch (error) {
+				result.failed += 1;
+				console.warn(`Marp Extended: could not scan for temporary export files in ${currentDirectory}`, error);
+				continue;
+			}
+
+			for (const entry of entries) {
+				const entryPath = path.join(currentDirectory, entry.name);
+				if (recursive && entry.isDirectory()) {
+					pendingDirectories.push(entryPath);
+					continue;
+				}
+				if (!entry.isFile()
+					|| !TEMPORARY_EXPORT_FILE_PATTERN.test(entry.name)
+					|| activeTemporaryExportPaths.has(entryPath)) {
+					continue;
+				}
+
+				try {
+					if ((await fs.promises.stat(entryPath)).mtimeMs > cutoff) {
+						continue;
+					}
+					await fs.promises.unlink(entryPath);
+					result.removed += 1;
+				} catch (error) {
+					result.failed += 1;
+					console.warn(`Marp Extended: could not remove historical temporary export file ${entryPath}`, error);
+				}
+			}
+		}
+
+		return result;
 	}
 
 	private shouldChooseExportDirectory(type: string): boolean {

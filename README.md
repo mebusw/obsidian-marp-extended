@@ -210,6 +210,11 @@ marp --version
 
 Use **Auto-detect** in settings to search `PATH` and common Homebrew locations such as `/opt/homebrew/bin/marp`. If `marp` is not found automatically, set **Marp CLI path** to the executable path, such as `/opt/homebrew/bin/marp` or `C:\Users\you\AppData\Roaming\npm\marp.cmd`.
 
+Marp Extended removes its temporary Markdown and preview HTML files when the
+preview process exits. It also reclaims temporary files older than 24 hours from
+the current deck directory before export. To remove historical files throughout
+the vault, use **Settings → Marp Extended → Historical temporary files**.
+
 The supported CLI version is exactly **4.5.1**. The opt-in npx fallback uses
 `@marp-team/marp-cli@4.5.1`; it requires Node.js **≥ 20.19** plus npm and may
 download the package on first use. Auto-detected incompatible versions can fall

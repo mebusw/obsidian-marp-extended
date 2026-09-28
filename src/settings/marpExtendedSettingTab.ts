@@ -52,6 +52,12 @@ export class MarpExtendedSettingTab extends PluginSettingTab {
 						aliases: ['mermaid zigzag', 'flowchart layout'],
 						render: setting => this.renderMermaidAutoFitControl(setting),
 					},
+					{
+						name: 'Historical temporary files',
+						desc: 'Delete Marp Extended export-source and preview HTML files older than 24 hours throughout this vault. Active and recent files are kept.',
+						aliases: ['cleanup', 'marp export files'],
+						render: setting => this.renderTemporaryFilesControl(setting),
+					},
 				],
 			},
 			{
@@ -119,6 +125,10 @@ export class MarpExtendedSettingTab extends PluginSettingTab {
 		this.renderMermaidAutoFitControl(new Setting(containerEl)
 			.setName('Auto-fit wide Mermaid flowcharts')
 			.setDesc('Re-layout long linear left-to-right or top-to-bottom flowcharts as multi-row/column zigzag diagrams in preview, export, and the editor, so slide scaling keeps text readable.'));
+
+		this.renderTemporaryFilesControl(new Setting(containerEl)
+			.setName('Historical temporary files')
+			.setDesc('Delete Marp Extended export-source and preview HTML files older than 24 hours throughout this vault. Active and recent files are kept.'));
 
 		this.displayMermaidEditorSection(containerEl);
 		this.displayThemesSection(containerEl);
@@ -227,6 +237,27 @@ export class MarpExtendedSettingTab extends PluginSettingTab {
 					this.plugin.refreshEditorMermaidRendering();
 					this.plugin.refreshActivePreview();
 				}));
+	}
+
+	private renderTemporaryFilesControl(setting: Setting): void {
+		setting.addButton(button => button
+			.setButtonText('Delete temporary files')
+			.onClick(async () => {
+				button.setDisabled(true);
+				try {
+					const result = await MarpExport.removeHistoricalTemporaryFiles(this.app);
+					if (result.failed > 0) {
+						new Notice(`Deleted ${result.removed} historical temporary file${result.removed === 1 ? '' : 's'}; ${result.failed} path${result.failed === 1 ? '' : 's'} could not be processed.`, 8000);
+					} else {
+						new Notice(`Deleted ${result.removed} historical temporary file${result.removed === 1 ? '' : 's'}.`, 5000);
+					}
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					new Notice(`Temporary file cleanup failed: ${message}`, 8000);
+				} finally {
+					button.setDisabled(false);
+				}
+			}));
 	}
 
 	private displayMermaidEditorSection(containerEl: HTMLElement): void {
