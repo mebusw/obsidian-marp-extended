@@ -3,6 +3,7 @@ import { describe, expect, test } from '@jest/globals';
 
 import { MarpExtendedSettingTab } from '@/settings/marpExtendedSettingTab';
 import { DEFAULT_SETTINGS } from '@/utilities/settings';
+import packageMetadata from '../../package.json';
 
 function isSettingGroup<K extends string>(definition: SettingDefinitionItem<K>): definition is SettingDefinitionGroup<K> {
 	return 'type' in definition && definition.type === 'group';
@@ -45,6 +46,10 @@ describe('Marp Extended setting definitions', () => {
 			'Installed Mermaid themes',
 		]);
 		expect(new Set(names).size).toBe(names.length);
+
+		const npxFallback = groups.flatMap(group => group.items ?? [])
+			.find(item => item.name === 'Use npx fallback');
+		expect(npxFallback?.desc).toContain(packageMetadata.marpExtended.npxMarpCliPackage);
 	});
 
 	test('keeps imperative render callbacks for settings with side effects and actions', () => {

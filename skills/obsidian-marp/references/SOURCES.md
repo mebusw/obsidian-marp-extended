@@ -2,14 +2,14 @@
 
 Generated/updatable upstream snapshots are stored in `upstream/` by `../scripts/update-references.py`.
 
-Current project metadata source: **Marp Extended** package `0.10.0-beta.1`
+Current project metadata source: **Marp Extended** package `0.12.0`
 (`package.json`; stable Community `manifest.json` stays on the latest published
 stable until the next Community release), plugin/package id `marp-extended`,
 repository <https://github.com/shuuul/obsidian-marp-extended>.
 
-Preview: `@marp-team/marp-core` `5.0.1` (npm `next` channel; `latest` remains 4.x)
+Preview: `@marp-team/marp-core` `5.0.2` (npm `next` channel; `latest` remains 4.x)
 with curated **Shiki** + **MathJax** plugins and a custom Mermaid stack. Export
-npx pin: `@marp-team/marp-cli@4.5.0` (CLI embeds Core 4.x). Packaged themes:
+npx pin: `@marp-team/marp-cli@4.5.1` (CLI embeds Core 4.x). Packaged themes:
 `assets/themes/`, `assets/mermaid-themes/`. Shiki language allowlist:
 `src/shims/marp-shiki.cjs`.
 

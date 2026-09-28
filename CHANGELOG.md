@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+* **deps:** update Marp CLI support to 4.5.1 and refresh development dependencies
+* **tooling:** require Node.js 22.20 for development and verify Node.js 22.20 and 24 in CI
+
 ## [0.12.0](https://github.com/shuuul/obsidian-marp-extended/compare/0.11.1...0.12.0) (2026-09-06)
 
 

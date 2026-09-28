@@ -210,11 +210,11 @@ marp --version
 
 Use **Auto-detect** in settings to search `PATH` and common Homebrew locations such as `/opt/homebrew/bin/marp`. If `marp` is not found automatically, set **Marp CLI path** to the executable path, such as `/opt/homebrew/bin/marp` or `C:\Users\you\AppData\Roaming\npm\marp.cmd`.
 
-The supported CLI version is exactly **4.5.0**. The opt-in npx fallback uses
-`@marp-team/marp-cli@4.5.0`; it requires Node.js/npm and may download the package
-on first use. Auto-detected incompatible versions can fall back to this pinned
-package. An explicitly configured incompatible CLI path fails with an actionable
-version error.
+The supported CLI version is exactly **4.5.1**. The opt-in npx fallback uses
+`@marp-team/marp-cli@4.5.1`; it requires Node.js **≥ 20.19** plus npm and may
+download the package on first use. Auto-detected incompatible versions can fall
+back to this pinned package. An explicitly configured incompatible CLI path fails
+with an actionable version error.
 
 Manual release installs include four runtime assets: `main.js`, `manifest.json`,
 `styles.css`, and `marp-engine.cjs`. Community-plugin installs receive Obsidian's
@@ -225,7 +225,8 @@ materializes a SHA-256-checked, content-addressed engine file on first export.
 
 ## Development
 
-Requires Node.js **≥ 20.19**.
+Requires Node.js **≥ 22.20** for local development. This is separate from the
+Node.js ≥ 20.19 runtime requirement for the optional npx export fallback.
 
 ```bash
 npm install
@@ -265,7 +266,7 @@ Developer guidance lives in [`AGENTS.md`](AGENTS.md). Release notes live in [`CH
 Current Marp-related runtime dependencies center on `@marp-team/marp-core`
 `5.0.2` (npm `next` channel; `latest` remains 4.x) with curated plugins (Shiki,
 MathJax) plus `beautiful-mermaid` for the custom Mermaid stack. Preview and
-export both instantiate the shipped Core 5 engine; export uses Marp CLI 4.5.0
+export both instantiate the shipped Core 5 engine; export uses Marp CLI 4.5.1
 only as the host for templates, browser-backed formats, and file orchestration.
 Marp Extended does not bundle Marp CLI into `main.js`.
 

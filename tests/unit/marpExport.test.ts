@@ -79,7 +79,7 @@ function createMockChildProcess(result: {
 
 function mockCliSuccess(stdout = '', stderr = ''): void {
 	spawnMock.mockImplementation((_executable, args) => createMockChildProcess({
-		stdout: args[args.length - 1] === '--version' ? (stdout || '4.5.0\n') : stdout,
+		stdout: args[args.length - 1] === '--version' ? (stdout || '4.5.1\n') : stdout,
 		stderr,
 	}));
 }
@@ -209,9 +209,9 @@ test('export uses configured Marp CLI path when provided', async () => {
 	expect(getLastCliExecutable()).toBe('/opt/homebrew/bin/marp');
 });
 
-test('export accepts the standard Marp CLI 4.5.0 version banner', async () => {
+test('export accepts the standard Marp CLI 4.5.1 version banner', async () => {
 	mockSaveDialog({ canceled: false, filePath: '/tmp/export/custom.html' });
-	mockCliSuccess('@marp-team/marp-cli v4.5.0 (w/ @marp-team/marp-core v4.4.0)\n');
+	mockCliSuccess('@marp-team/marp-cli v4.5.1 (w/ @marp-team/marp-core v4.4.0)\n');
 	const exporter = new MarpExport({
 		...DEFAULT_SETTINGS,
 		MARP_CLI_PATH: '/opt/homebrew/bin/marp',
@@ -247,8 +247,8 @@ test('export rejects an explicitly configured incompatible Marp CLI', async () =
 		MARP_CLI_PATH: '/opt/homebrew/bin/marp',
 	});
 
-	await expect(exporter.export(createFile(), 'html')).rejects.toThrow('requires exactly 4.5.0');
-	await expect(exporter.export(createFile(), 'html')).rejects.toThrow('requires exactly 4.5.0');
+	await expect(exporter.export(createFile(), 'html')).rejects.toThrow('requires exactly 4.5.1');
+	await expect(exporter.export(createFile(), 'html')).rejects.toThrow('requires exactly 4.5.1');
 	expect(spawnMock).toHaveBeenCalledTimes(2);
 });
 
@@ -382,13 +382,13 @@ test('Windows npx fallback runs command scripts through cmd.exe', async () => {
 		.mockImplementationOnce(() => createMockChildProcess({
 			error: Object.assign(new Error('spawn marp ENOENT'), { code: 'ENOENT' }),
 		}))
-		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.0\n' }));
+		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.1\n' }));
 
 	try {
 		await expect(MarpExport.getCliVersion({
 			...DEFAULT_SETTINGS,
 			MARP_CLI_USE_NPX: true,
-		})).resolves.toBe('4.5.0');
+		})).resolves.toBe('4.5.1');
 
 		expect(spawnMock.mock.calls[1][0]).toBe('C:\\Windows\\System32\\cmd.exe');
 		expect(spawnMock.mock.calls[1][1].slice(0, 3)).toEqual(['/d', '/s', '/c']);
@@ -407,7 +407,7 @@ test('Windows npx fallback runs command scripts through cmd.exe', async () => {
 test('Windows configured command script escapes paths and arguments for cmd.exe', async () => {
 	const platform = Object.getOwnPropertyDescriptor(process, 'platform');
 	Object.defineProperty(process, 'platform', { configurable: true, value: 'win32' });
-	spawnMock.mockImplementation(() => createMockChildProcess({ stdout: '4.5.0\n' }));
+	spawnMock.mockImplementation(() => createMockChildProcess({ stdout: '4.5.1\n' }));
 	mockSaveDialog({ canceled: false, filePath: 'C:\\Exports & Reviews\\deck.html' });
 
 	try {
@@ -464,7 +464,7 @@ test('export converts wiki-links through a temporary markdown file without chang
 	linkedImage.path = 'assets/image.png';
 	mockSaveDialog({ canceled: false, filePath: join(exportDirectory, 'deck.pdf') });
 	spawnMock.mockImplementation((_executable, args) => {
-		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.0\n' });
+		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.1\n' });
 		temporarySourcePath = args[0];
 		expect(temporarySourcePath).not.toBe(sourcePath);
 		expect(dirname(temporarySourcePath)).toBe(dirname(sourcePath));
@@ -514,7 +514,7 @@ test('export injects selected Mermaid theme CSS and flat mode into the temporary
 	(file.vault.adapter as any).read = async (path: string) => readFileSync(join(root, path), 'utf-8');
 	mockSaveDialog({ canceled: false, filePath: join(exportDirectory, 'deck.html') });
 	spawnMock.mockImplementation((_executable, args) => {
-		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.0\n' });
+		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.1\n' });
 		temporarySourcePath = args[0];
 		const processed = readFileSync(temporarySourcePath, 'utf-8');
 		expect(processed).toMatch(/^---\ntheme: kami\nmermaidTheme: accent\nmermaidFlat: true\n---\s*<style class="marp-extended-mermaid-theme">/);
@@ -567,7 +567,7 @@ test('export compiles Marp Extended comment markers in the temporary markdown fi
 	mkdirSync(exportDirectory, { recursive: true });
 	mockSaveDialog({ canceled: false, filePath: join(exportDirectory, 'deck.html') });
 	spawnMock.mockImplementation((_executable, args) => {
-		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.0\n' });
+		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.1\n' });
 		temporarySourcePath = args[0];
 		const processed = readFileSync(temporarySourcePath, 'utf-8');
 		expect(processed).toContain('<!-- _class: cover -->');
@@ -609,7 +609,7 @@ test('export uses the current editor markdown instead of stale vault content', a
 
 	mockSaveDialog({ canceled: false, filePath: join(root, 'deck.html') });
 	spawnMock.mockImplementation((_executable, args) => {
-		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.0\n' });
+		if (args[args.length - 1] === '--version') return createMockChildProcess({ stdout: '4.5.1\n' });
 		temporarySourcePath = args[0];
 		const processed = readFileSync(temporarySourcePath, 'utf-8');
 		expect(processed).toContain('<!-- _class: cover -->');
@@ -679,7 +679,7 @@ test('export throws an actionable error when Marp CLI is missing', async () => {
 test('export throws when Marp CLI returns a failing exit status', async () => {
 	mockSaveDialog({ canceled: false, filePath: '/tmp/export/deck.html' });
 	spawnMock
-		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.0\n' }))
+		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.1\n' }))
 		.mockImplementationOnce(() => createMockChildProcess({
 			exitCode: 1,
 			stdout: 'stdout details',
@@ -695,7 +695,7 @@ test('export throws when Marp CLI returns a failing exit status', async () => {
 test('export explains missing browser errors from Marp CLI output', async () => {
 	mockSaveDialog({ canceled: false, filePath: '/tmp/export/deck.pdf' });
 	spawnMock
-		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.0\n' }))
+		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.1\n' }))
 		.mockImplementationOnce(() => createMockChildProcess({
 			exitCode: 1,
 			stderr: 'NOT_FOUND_CHROMIUM',
@@ -750,7 +750,7 @@ test('PDF export retries through npx when browser is missing and npx fallback is
 	mockSaveDialog({ canceled: false, filePath: '/tmp/export/deck.pdf' });
 	spawnMock
 		.mockImplementationOnce(() => createMockChildProcess({
-			stdout: '@marp-team/marp-cli v4.5.0 (w/ @marp-team/marp-core v4.4.0)\n',
+			stdout: '@marp-team/marp-cli v4.5.1 (w/ @marp-team/marp-core v4.4.0)\n',
 		}))
 		.mockImplementationOnce(() => createMockChildProcess({
 			exitCode: 1,
@@ -780,7 +780,7 @@ test('PDF export retries through npx when browser is missing and npx fallback is
 test('missing-browser stderr does not retry through npx when Marp CLI path is configured', async () => {
 	mockSaveDialog({ canceled: false, filePath: '/tmp/export/deck.pdf' });
 	spawnMock
-		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.0\n' }))
+		.mockImplementationOnce(() => createMockChildProcess({ stdout: '4.5.1\n' }))
 		.mockImplementationOnce(() => createMockChildProcess({
 			exitCode: 1,
 			stderr: 'could not find chrome',

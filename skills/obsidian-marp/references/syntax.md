@@ -839,7 +839,7 @@ Runtime boundary to remember when advising users:
 | Surface | Engine |
 | --- | --- |
 | In-Obsidian preview | Shared Marp Core **5** factory + Shiki + MathJax + custom Mermaid |
-| Managed export | Marp CLI **4.5.0** host + the same shipped Core **5** semantic engine |
+| Managed export | Marp CLI **4.5.1** host + the same shipped Core **5** semantic engine |
 
 Containers, templates, browser layout, PDF, and PPTX remain host-owned, so parity
 is semantic rather than pixel-identical.

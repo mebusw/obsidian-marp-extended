@@ -187,11 +187,11 @@ Beta release assets are `main.js`, beta-versioned `manifest.json`, `styles.css`,
 
 Preview flow: active `MarkdownView` → `MarpPreviewView.displaySlides()` → `FilePath` base path/wiki-link conversion → Marp Core render → preview pane update.
 
-Export flow: command/action → `MarpExport.export()` → hash-checked Core 5 engine artifact → `FilePath` source/theme paths → optional wiki-link/Extended/Mermaid compilation → Marp CLI 4.5.0 with `--engine` → output.
+Export flow: command/action → `MarpExport.export()` → hash-checked Core 5 engine artifact → `FilePath` source/theme paths → optional wiki-link/Extended/Mermaid compilation → Marp CLI 4.5.1 with `--engine` → output.
 
 ## Runtime requirements
 
-- Node.js **≥ 20.19** for local typecheck/build (Marp Core 5).
+- Node.js **≥ 22.20** for local typecheck/build. The optional npx export fallback supports Node.js **≥ 20.19** because its shipped Core 5 engine retains that runtime floor.
 - Desktop Obsidian for export (Marp CLI + browser).
 
 ## Coding conventions
@@ -237,7 +237,7 @@ See `specs/README.md` for the full lifecycle.
 ## Gotchas
 
 - Export except HTML requires Chrome/Chromium/Edge or a configured `CHROME_PATH`.
-- Managed export requires Marp CLI 4.5.0. The pinned npx fallback supplies that version; explicit incompatible CLI paths fail validation.
+- Managed export requires Marp CLI 4.5.1. The pinned npx fallback supplies that version; explicit incompatible CLI paths fail validation.
 - Preview and export share Core 5 semantic options/plugins, but iframe/container/template/browser wrappers remain host-owned and are not expected to be pixel-identical.
 - `MarpExport.export()` writes processed Markdown to the resolved export source before invoking Marp CLI. Be careful with source-file mutation semantics.
 - Preview sync is driven by the pane the user is currently using; see `docs/preview_sync.md`. Cursor updates use CodeMirror `ViewUpdate`; reading view uses annotated section line starts. The driver pane must not jump.

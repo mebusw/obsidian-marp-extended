@@ -9,19 +9,19 @@ keep this implementation-focused reference aligned with it.
 - Display name: `Marp Extended` (`manifest.json`).
 - Plugin id: `marp-extended` (`manifest.json`).
 - Package name: `marp-extended` (`package.json`).
-- Package version: `0.10.0-beta.1` (`package.json`). Stable Community `manifest.json` stays on the latest published stable until the next Community release.
+- Package version: `0.12.0` (`package.json`). Stable Community `manifest.json` stays on the latest published stable until the next Community release.
 - Repository: <https://github.com/shuuul/obsidian-marp-extended>.
 - Local/manual runtime files: `main.js`, `manifest.json`, `styles.css`, `marp-engine.cjs`. Community installs materialize a SHA-256-checked, content-addressed copy of the embedded engine on first export.
 - Generated `main.js` should not be edited by hand; change `src/` and run the build.
-- Node.js **≥ 20.19** required for local typecheck/build (Marp Core 5).
+- Node.js **≥ 22.20** required for local typecheck/build. The optional npx export fallback supports Node.js **≥ 20.19** because the shipped Core 5 engine retains that runtime floor.
 
 ## Runtime engines
 
 | Surface | Engine |
 | --- | --- |
 | In-Obsidian preview | Shared `@marp-team/marp-core` **5.0.2** factory + `shiki`, `mathjax`, Mermaid fallback |
-| Export host | Exactly `@marp-team/marp-cli@4.5.0` + shipped Core 5 engine through `--engine` |
-| Explicit user CLI path | Accepted only when its reported CLI version is exactly 4.5.0 |
+| Export host | Exactly `@marp-team/marp-cli@4.5.1` + shipped Core 5 engine through `--engine` |
+| Explicit user CLI path | Accepted only when its reported CLI version is exactly 4.5.1 |
 
 Preview and CLI engine entries call `src/runtime/marpEngine.ts`. Each call creates
 a fresh Marp instance with Shiki, MathJax, custom Mermaid fallback, inline SVG,
@@ -37,7 +37,7 @@ Defined in `src/utilities/settings.ts`:
 | Setting | Default | Effect |
 | --- | --- | --- |
 | `MARP_CLI_PATH` | `''` | Explicit Marp CLI executable path. |
-| `MARP_CLI_USE_NPX` | `false` | When enabled and no path is set, run pinned `@marp-team/marp-cli@4.5.0` via npx. |
+| `MARP_CLI_USE_NPX` | `false` | When enabled and no path is set, run pinned `@marp-team/marp-cli@4.5.1` via npx. |
 | `CHROME_PATH` | `''` | Optional browser path for PDF/PPTX export. |
 | `MERMAID_EDITOR_RENDER` | `true` | Live Preview and Reading view Mermaid decorations. Reading view omits the show-source button. |
 | `MERMAID_EDITOR_THEME` | `kami` | Default Mermaid theme name for editor when frontmatter omits `mermaidTheme`. |
@@ -79,7 +79,7 @@ Before calling Marp CLI, the plugin:
 5. Loads Mermaid theme CSS, parses `--bg/--fg/...` into beautiful-mermaid render options, and replaces Mermaid fences with inline SVG figures.
 6. Writes a temporary export source when content was transformed.
 7. Verifies/materializes the embedded Core 5 engine by SHA-256.
-8. Validates Marp CLI 4.5.0 (configured path, PATH detect, or npx pin) and invokes it with the engine.
+8. Validates Marp CLI 4.5.1 (configured path, PATH detect, or npx pin) and invokes it with the engine.
 
 Typical CLI argv shape:
 

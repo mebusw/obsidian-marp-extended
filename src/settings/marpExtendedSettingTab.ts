@@ -1,5 +1,6 @@
 import { Modal, Notice, PluginSettingTab, Setting, type App, type SettingDefinitionItem } from 'obsidian';
 
+import packageMetadata from '../../package.json';
 import type MarpExtended from '../main';
 import { MarpExport } from '../utilities/marpExport';
 import { MermaidThemeManager } from '../utilities/mermaidThemeManager';
@@ -7,6 +8,8 @@ import { ThemeManager } from '../utilities/themeManager';
 import type { MarpExtendedSettings } from '../utilities/settings';
 import type { InstalledThemeEntry } from '../utilities/vaultThemeManager';
 import { VaultThemeManager } from '../utilities/vaultThemeManager';
+
+const NPX_FALLBACK_DESCRIPTION = `If Marp CLI is not found and no path is set, run a pinned ${packageMetadata.marpExtended.npxMarpCliPackage} through npx when Marp CLI is not found or when a browser-backed export fails without an explicit CLI path. This requires Node.js/npm and may download the package on first use.`;
 
 export class MarpExtendedSettingTab extends PluginSettingTab {
 	private plugin: MarpExtended;
@@ -33,7 +36,7 @@ export class MarpExtendedSettingTab extends PluginSettingTab {
 					},
 					{
 						name: 'Use npx fallback',
-						desc: 'If Marp CLI is not found and no path is set, run a pinned @marp-team/marp-cli@4.5.0 through npx when Marp CLI is not found or when a browser-backed export fails without an explicit CLI path. This requires Node.js/npm and may download the package on first use.',
+						desc: NPX_FALLBACK_DESCRIPTION,
 						aliases: ['npm', 'marp cli fallback'],
 						render: setting => this.renderNpxFallbackControl(setting),
 					},
@@ -107,7 +110,7 @@ export class MarpExtendedSettingTab extends PluginSettingTab {
 
 		this.renderNpxFallbackControl(new Setting(containerEl)
 			.setName('Use npx fallback')
-			.setDesc('If Marp CLI is not found and no path is set, run a pinned @marp-team/marp-cli@4.5.0 through npx when Marp CLI is not found or when a browser-backed export fails without an explicit CLI path. This requires Node.js/npm and may download the package on first use.'));
+			.setDesc(NPX_FALLBACK_DESCRIPTION));
 
 		this.renderChromePathControl(new Setting(containerEl)
 			.setName('Chrome path')

@@ -30,7 +30,6 @@ type NodeFsModule = typeof NodeFs;
 type NodePathModule = typeof NodePath;
 
 const DEFAULT_MARP_CLI_COMMAND = 'marp';
-const SUPPORTED_MARP_CLI_VERSION = '4.5.0';
 type MarpExtendedPackageMetadata = {
 	marpExtended: {
 		npxMarpCliPackage: string;
@@ -38,6 +37,7 @@ type MarpExtendedPackageMetadata = {
 };
 
 const NPX_MARP_CLI_PACKAGE = (packageMetadata as MarpExtendedPackageMetadata).marpExtended.npxMarpCliPackage;
+const SUPPORTED_MARP_CLI_VERSION = NPX_MARP_CLI_PACKAGE.slice(NPX_MARP_CLI_PACKAGE.lastIndexOf('@') + 1);
 const MISSING_MARP_CLI_INSTALL_HINT = 'Install it with `npm install -g @marp-team/marp-cli`, set the Marp CLI path, or enable npx fallback in Marp Extended settings.';
 const MISSING_NPX_INSTALL_HINT = 'Install Node.js/npm so npx is available, or set the Marp CLI path in Marp Extended settings.';
 const MARP_CLI_MAX_BUFFER = 10 * 1024 * 1024;

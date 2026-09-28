@@ -238,9 +238,9 @@ while Marp CLI owns the HTML template and the browser-backed PDF/PPTX pipeline.
 This is semantic parity, not a pixel-for-pixel guarantee across browsers and file
 formats.
 
-Managed export requires Marp CLI **4.5.0** and passes the shipped Core 5 engine
+Managed export requires Marp CLI **4.5.1** and passes the shipped Core 5 engine
 through `--engine`. Auto-detected incompatible versions can use the pinned
-`@marp-team/marp-cli@4.5.0` npx fallback when enabled. An explicitly configured
+`@marp-team/marp-cli@4.5.1` npx fallback when enabled. An explicitly configured
 incompatible executable fails with a version error instead of silently using a
 different rendering contract.
 
