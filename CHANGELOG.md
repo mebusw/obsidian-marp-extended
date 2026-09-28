@@ -11,6 +11,13 @@
 
 * **export:** remove preview-generated temporary HTML and provide a settings action to clean historical temporary files ([#29](https://github.com/shuuul/obsidian-marp-extended/issues/29))
 
+## [0.12.1](https://github.com/shuuul/obsidian-marp-extended/compare/0.12.0...0.12.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **export:** clean up temporary preview files ([4cc9e75](https://github.com/shuuul/obsidian-marp-extended/commit/4cc9e75ff6736f5ddfa5c78f060c49095ad74b1d)), closes [#29](https://github.com/shuuul/obsidian-marp-extended/issues/29)
+
 ## [0.12.0](https://github.com/shuuul/obsidian-marp-extended/compare/0.11.1...0.12.0) (2026-09-06)
 
 

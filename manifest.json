@@ -1,7 +1,7 @@
 {
 	"id": "marp-extended",
 	"name": "Marp Extended",
-	"version": "0.12.0",
+	"version": "0.12.1",
 	"minAppVersion": "1.12.0",
 	"description": "Create markdown-based Marp presentations with extended Marp support.",
 	"author": "shuuul",
