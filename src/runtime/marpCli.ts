@@ -416,6 +416,13 @@ function isMissingExecutable(error: MarpCliProcessError): boolean {
 	return error.code === 'ENOENT';
 }
 
+function isMissingNodeError(error: MarpCliProcessError): boolean {
+	// A `#!/usr/bin/env node` shebang that cannot resolve `node` fails inside
+	// /usr/bin/env, so the child dies with exit status 127 instead of raising
+	// ENOENT, and the generic "Marp CLI failed" message gives no useful hint.
+	return error.exitCode === 127;
+}
+
 function isMissingBrowserError(output: string): boolean {
 	return /NOT_FOUND_CHROMIUM|could not find.*(?:chrome|chromium|edge)|no .*browser|no usable sandbox|install .*chrome|chromium.*not found/i.test(output);
 }
@@ -429,6 +436,11 @@ function toUserFacingCliError(error: MarpCliProcessError): MarpCLIError {
 	}
 
 	const output = getMarpCliOutput(error);
+	if (isMissingNodeError(error)) {
+		const suffix = output ? `\n\n${output}` : '';
+		return new MarpCLIError(`Marp CLI could not run because \`node\` was not found in its PATH (exit status 127). Obsidian inherits PATH from launchd when launched from Finder or the Dock, which usually omits Homebrew. Reinstall Node.js into a directory on the system PATH, or set the Marp CLI path to a wrapper script that invokes Node with an absolute path.${suffix}`);
+	}
+	
 	if (isMissingBrowserError(output)) {
 		const suffix = output ? `\n\n${output}` : '';
 		return new MarpCLIError(`Marp CLI could not find Chrome, Chromium, or Microsoft Edge. Install a supported browser or set CHROME_PATH in Marp Extended settings.${suffix}`);
