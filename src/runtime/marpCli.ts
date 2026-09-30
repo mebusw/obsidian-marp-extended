@@ -253,6 +253,17 @@ function getMarpCliEnvironment(settings: MarpExtendedSettings): Record<string, s
 			envCopy[key] = env[key] ?? '';
 		}
 	}
+	// Obsidian launched from Finder/Dock inherits launchd's default PATH, which usually
+	// excludes Homebrew. The npm-installed `marp` is a `#!/usr/bin/env node`
+	// script, so it dies with `env: node: No such file or directory` (exit 127)
+	// even though the executable itself was located successfully above. Forward
+	// the same fallback directories used for discovery so the child process can
+	// resolve its interpreter.
+	const path = getNodePath();
+	const searchDirectories = getPathSearchDirectories(path);
+	if (searchDirectories.length > 0) {
+		envCopy.PATH = searchDirectories.join(path.delimiter);
+	}
 	if (settings.CHROME_PATH.trim()) {
 		envCopy.CHROME_PATH = settings.CHROME_PATH.trim();
 	}
